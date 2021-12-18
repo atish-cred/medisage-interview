@@ -1,0 +1,35 @@
+{
+	"info": {
+		"_postman_id": "bdc23bb0-0372-4197-a45b-1453ad244fb2",
+		"name": "Medisage",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "http://localhost/medisage/api/api1",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost/medisage/api/api1?search=d",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"medisage",
+						"api",
+						"api1"
+					],
+					"query": [
+						{
+							"key": "search",
+							"value": "d"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
