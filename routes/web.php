@@ -14,8 +14,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/student', [StudentController::class, 'index'])->name('/student');
-Route::get('/student/grid', [StudentController::class, 'grid'])->name('/student/grid');
+Route::get('/{search?}', [StudentController::class, 'index'])->name('/');
 Route::get('/student/add/{id?}', [StudentController::class, 'add'])->name('/student/add');
 Route::post('/student/save', [StudentController::class, 'save'])->name('/student/save');
 Route::get('/student/delete/{id?}', [StudentController::class, 'destroy'])->name('/student/delete');

@@ -13,91 +13,20 @@ class StudentController extends Controller {
     private $pageTitle = 'Student';
 
     public function index(Request $request) {
+        $search = '';
+        if($request->has('search') && !empty($request->search)){
+            $search = $request->get('search');
+        }
+        
+        $obj = new Student();
+        $students = $obj->getDataWithPagination($request);
+
+        $data['search'] = $search;
+        $data['students'] = $students;
         $data['title'] = $this->pageTitle;
         return view('student.index', $data);
     }
-
-    public function grid(Request $request) {
-        $start = $request->has('start') ? (int) $request->start : (int) 0;
-        $length = $request->has('length') ? (int) $request->length : (int) 10;
-        $download = $request->has('download') ? $request->download : "";
-
-        $params = [];
-        $orderBy = $request->has('order') ? $request->order : array();        
-
-        if(!empty($orderBy)){
-            $columns = array('name','name','email','phone_number');
-            $orderBy = $orderBy[0];
-            $columnIndex = $orderBy['column'];
-            
-            if(array_key_exists($columnIndex, $columns)){
-                $column = $columns[$columnIndex];
-                $params['order_by'] = "{$column}";
-                $params['order_type'] = "{$orderBy['dir']}";
-            }
-        }
-
-        $params['start'] = $start;
-        $params['limit'] = $length;
-        $params['count'] = true;
-
-        if($request->has('name') && !empty($request->name)){
-            $params['where'][] = ['name', " LIKE ", "'%{$request->name}%'"];
-        }
-
-        if($request->has('email') && !empty($request->email)){
-            $params['where'][] = ['email', " LIKE ", "'%{$request->email}%'"];
-        }
-
-        if($request->has('phone_number') && !empty($request->phone_number)){
-            $params['where'][] = ['phone_number', " = ", "{$request->phone_number}"];
-        }
-
-        $obj = new Student();
-        $totalRecordsdata = $obj->getAll($params);
-        $totalRecords = 0;
-        
-        $data = [];
-        if(!empty($totalRecordsdata) && $totalRecordsdata->total_records > 0){
-            $totalRecords = $totalRecordsdata->total_records;
-            $params['count'] = false;
-            $data = $obj->getAll($params);
-        }
-
-        if(!empty($data)){
-            $data = $this->getGridFields($data);
-        }
-
-        // echo "<pre>";
-        // print_r($params);
-        // print_r($data);
-        // die;
-
-        $response = array(
-            'draw' => (int) $request->has('draw') ? (int) $request->draw : (int) 0,
-            'recordsTotal' => (int) $totalRecords,
-            'recordsFiltered' => (int) $totalRecords,
-            'data' => $data,
-        );
-        return json_encode($response, true);
-    }
     
-    public function getGridFields($rows, $downloadOrCsv = false) {
-        $data = array();
-        if (count($rows)) {
-            foreach ($rows as $row) {
-                $row = (array) $row;
-                $data[] = array(
-                    $row['name'],
-                    $row['email'],
-                    $row['phone_number'],
-                    $row['id'],
-                );
-            }
-        }
-        return $data;
-    }
-
     public function add(Request $request, $id = null) {
         $data['data'] = (object) [];
         $data['title'] = $this->pageTitle; 
@@ -111,8 +40,6 @@ class StudentController extends Controller {
 
     public function save(Request $request) {
         $returnData = array();
-       
-        // ## File Upload Not added yet. Please Confirm AWS or Upload Folder 
         $validator = Validator::make($request->all(), ([
             'name' => 'required|string|max:100',
             'email' => 'required|email',
@@ -129,7 +56,6 @@ class StudentController extends Controller {
         DB::beginTransaction();
         $errorTransaction = false;
         $msg = '';
-
         try{
             $profileImage = '';
             if($request->has('id') && !empty($request->id)){
@@ -209,7 +135,6 @@ class StudentController extends Controller {
                 $errorTransaction = true;
             }
         }catch(\Exception $e){
-            // echo 
             $msg = $e->getLine()." - ".$e->getMessage();
             $errorTransaction = true;
         }
@@ -219,56 +144,25 @@ class StudentController extends Controller {
             $returnData = array('status' => 'error', 'message' => 'Fail to delete data.', 'exception_error' => $msg);
         }else{
             DB::commit();
-            $returnData = array('status' => 'success', 'message' => 'TPA deleted successfully.');
+            $returnData = array('status' => 'success', 'message' => 'Student deleted successfully.');
         }
         return json_encode($returnData);
     }
-
-
-    public function apiFetch(Request $request){
-        // print_r($request->all());
-
-        $start = $request->has('start') ? (int) $request->start : (int) 0;
-        $length = $request->has('length') ? (int) $request->length : (int) 10;
-        $params = [];
-
-        $params['start'] = $start;
-        $params['limit'] = $length;
-        $params['count'] = true;
-
+    
+    public function fetchStudentsApi(Request $request){
+        $search = '';
         if($request->has('search') && !empty($request->search)){
-            $params['where_or'][] = ['name', " LIKE ", "'%{$request->search}%'"];
-            $params['where_or'][] = ['email', " LIKE ", "'%{$request->search}%'"];
-            $params['where_or'][] = ['phone_number', " LIKE ", "'%{$request->search}%'"];
+            $search = $request->get('search');
         }
 
         $obj = new Student();
-        $totalRecordsdata = $obj->getAll($params);
-        $totalRecords = 0;
-        
-        $data = [];
-        if(!empty($totalRecordsdata) && $totalRecordsdata->total_records > 0){
-            $totalRecords = $totalRecordsdata->total_records;
-            $params['count'] = false;
-            $data = $obj->getAll($params);
+        $students = $obj->getDataWithPagination($request);
+
+        $data['search'] = $search;
+
+        $data['students'] = [];
+        if($students->count() > 0){
+            $data['students'] = $students->toArray();
         }
-
-        if(!empty($data)){
-            $data = $this->getGridFields($data);
-        }
-
-        // echo "<pre>";
-        // print_r($params);
-        // print_r($data);
-        // die;
-
-        $response = array(
-            'recordsTotal' => (int) $totalRecords,
-            'data' => $data,
-            'start' => $start,
-            'limit' => $length,
-        );
-
-        return response()->json($response);
     }
 }

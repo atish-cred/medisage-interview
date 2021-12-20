@@ -9,14 +9,14 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-    <link href="//cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css" rel="stylesheet">
-    <script src="//cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <!-- <link href="//cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css" rel="stylesheet"> -->
+    <!-- <script src="//cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script> -->
 
     <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> -->
 
-    <script src="{{ asset('public/js/common.js') }}" defer></script>
+    <!-- <script src="{{ asset('public/js/common.js') }}" defer></script> -->
 </head>
 
 <body>
@@ -27,43 +27,56 @@
 
     <div class="container mt-5">
         <div class="row">
-            <form class="kt-form kt-form--label-right" action="" method="get" name="frmFilter" id="frmFilter">
+            <form action="{{url('/')}}" method="get" name="frmFilter1" id="frmFilter1">
                 <div class="col-lg-12 form-group row">
-                    <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                    <div class="col-lg-3 ">
                         <label class="">Name</label>
-                        <input type="text" name="name" class="form-control form-control-sm" id="name" />
+                        <input type="text" name="search" class="form-control form-control-sm" value="{{$search}}" id="name" />
                     </div>
 
-                    <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
-                        <label class="">Email</label>
-                        <input type="text" name="email" class="form-control form-control-sm" id="email" />
-                    </div>
-
-                    <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
-                        <label class="">Phone Number</label>
-                        <input type="text" name="phone_number" class="form-control form-control-sm" id="phone_number" />
-                    </div>
-
-                    <div class="col-auto kt-align-center">
+                    <div class="col-lg-3">
                         <label class="">&nbsp;</label> <br>
-                        <input type="button" name="btn_filter_apply" id="btn_filter_apply" class="btn btn-sm btn-info" value="Search">
-                        <a href="student/add" id="addBtn" class="btn btn-sm btn-success pl-5 pr-5" >Add New Student</a>
+                        <input type="submit" id="submitButton" class="btn btn-sm btn-success" value="Search">
+                        <a href="student/add" id="addBtn" class="btn btn-sm btn-info pl-5 pr-5" >Add New Student</a>
                     </div>
                 </div>
             </form>
 
-            <div class="table-responsive-sm table-responsive-md table-responsive mt-5"> 
-                <table class="table table-striped table-bordered table-hover table-checkable" id="dataTable">
-                    <thead>
+            <div class="table-responsive mt-5"> 
+                <table class="table table-bordered " id="dataTable11">
+                    <thead class="table-primary">
                         <tr>
-                            @php $columns = array('Name', 'Email', 'Phone Number'); @endphp
-                            @foreach($columns as $column)
-                            <th>{{$column}}</th>
-                            @endforeach
-                            <th class="action-width">Actions</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone Number</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
+                    <?php if(!empty($students) && $students->count() > 0){ ?>
+                        <tbody>
+                            <?php foreach($students as $key => $item){ ?>
+                                <tr>
+                                    <td>{{$item->name}}</td>
+                                    <td>{{$item->email}}</td>
+                                    <td>{{$item->phone_number}}</td>
+                                    <td>
+                                        <a href="add/{{$item->id}}" class="btn btn-sm btn-success" title="Edit">Edit</a>
+                                        <a type="button" class="btn btn-sm btn-danger text-white" onclick="confirmDelete('{{$item->id}}')">Delete</a>
+                                    </td>
+                                </tr>
+                            <?php } ?>
+                        </tbody>
+                    <?php } ?>
                 </table>
+                
+                <?php if(!empty($students) && $students->count() > 0){ ?>
+                    <div class="d-flex justify-content-center">
+                        <div class="col-12">
+                            {{ $students->links(); }}
+                        </div>
+                    </div>
+
+                <?php } ?>
             </div>
         </div>
     </div>
@@ -71,39 +84,7 @@
 
 <script type="text/javascript">
     jQuery(document).ready(function() {
-        var table = $('#dataTable').DataTable({
-            bFilter: false,
-            processing: true,
-            serverSide: true,
-            ajax: 'student/grid?status=Active',
-            columnDefs: [{
-                    "render": function(data, type, row) {
-                        return '<a href="student/add/' + row[3] + '" class="btn btn-sm btn-success" title="Edit">\
-                                <i class="fa fa-edit p-0"></i> Edit\
-                            </a>\
-                           <a type="button" class="btn btn-sm btn-danger text-white" title="Copy" onclick="confirmDelete(' + row[3] + ')">\
-                                 <i class="fa fa-trash p-0"></i> Delete\
-                             </a>';
-                    },
-                    "targets": 3
-                },
-                {
-                    "orderable": false,
-                    "targets": [3]
-                },
-                {
-                    "searchable": false,
-                    "targets": [1, 2, 3]
-                },
-            ]
-        });
-
-        $("#btn_filter_apply").click(function() {
-            var table = $('#dataTable').dataTable();
-            var passData = "?" + $("#frmFilter").serialize();
-            table.fnReloadAjax("student/grid" + passData);
-            return false;
-        });
+       
     });
 
     function confirmDelete(id) {
